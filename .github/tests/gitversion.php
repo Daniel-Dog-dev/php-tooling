@@ -61,6 +61,33 @@
     }
     echo "The hash matched between GitVersion and gitinfo.json.\n";
 
-    echo $gitversion->getVersion();
+    echo "Check if short hash is 7 chars long.\n";
+    if(!strlen($gitversion->getShortHash()) == 7){
+        echo "The Git short hash was not 7 chars long.\n";
+        echo "Got char size " . strlen($gitversion->getShortHash()) . ".\n";
+        exit(5);
+    }
+    echo "The short hash was 7 chars long.\n";
+
+    echo "Check if short hash changes when changing size to 12.\n";
+    $gitversion->setShortHashSize(12);
+    if(!strlen($gitversion->getShortHash()) == 12){
+        echo "The Git short hash size changes was not 12 chars long.\n";
+        echo "Got char size " . strlen($gitversion->getShortHash()) . ".\n";
+        exit(6);
+    }
+    echo "THe short hash size correcrly changes.\n";
+
+    $gitversion->setShortHashSize(7);
+
+    echo "Check if the version text matches between GitVersion and gitinfo.json.\n";
+    if($gitversion->getVersion() != substr($github_runner_gitinfo["hash"], 0, 7) . " (" . $github_runner_gitinfo["branch"] . ")"){
+        echo "The Git hash of GitVersion did not match the gitinfo.json hash!\n";
+        echo "GitVersion: " . $gitversion->getVersion() . "\n";
+        echo "gitinfo.json: " . substr($github_runner_gitinfo["hash"], 0, 7) . " (" . $github_runner_gitinfo["branch"] . ")\n";
+        exit(7);
+    }
+    echo "Version text matched between GitVersion and gitinfo.json.";
+
     exit(0);
 ?>
