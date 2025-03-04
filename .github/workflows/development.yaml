@@ -1,0 +1,35 @@
+name: Test development
+
+on:
+  push:
+    branches: [ "dev*" ]
+    
+jobs:
+
+  test:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: ['ubuntu-latest']
+        php-versions: ['8.4']
+        
+    steps:
+      - name: Cloning GitHub repository
+        uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+        env:
+          fail-fast: true
+          update: true
+      
+      - name: Configure local environment
+        run: |
+            echo "{ \"ref\": \"${{ github.head_ref }}\", \"hash\": \"${{ github.sha }}\" }" > .github/tests/gitinfo.json
+
+      - name: Run tests
+        run: |
+            php ./.github/tests/gitversion.php
