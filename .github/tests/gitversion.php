@@ -39,16 +39,25 @@
         echo "The Git ref of GitVersion did not match the gitinfo.json ref!\n";
         echo "GitVersion: " . $gitversion->getRef() . "\n";
         echo "gitinfo.json: " . $github_runner_gitinfo["ref"] . "\n";
-        exit(3);
+        exit(2);
     }
     echo "The ref matched between GitVersion and gitinfo.json.\n";
+
+    echo "Check if branch name matches between GitVersion and gitinfo.json.\n";
+    if($gitversion->getBranch() != $github_runner_gitinfo["branch"]){
+        echo "The Git branch name of GitVersion did not match the gitinfo.json ref!\n";
+        echo "GitVersion: " . $gitversion->getBranch() . "\n";
+        echo "gitinfo.json: " . $github_runner_gitinfo["branch"] . "\n";
+        exit(3);
+    }
+    echo "The branch name matched between GitVersion and gitinfo.json.\n";
 
     echo "Check if hash matches between GitVersion and gitinfo.json.\n";
     if($gitversion->getHash() != $github_runner_gitinfo["hash"]){
         echo "The Git hash of GitVersion did not match the gitinfo.json hash!\n";
         echo "GitVersion: " . $gitversion->getHash() . "\n";
         echo "gitinfo.json: " . $github_runner_gitinfo["hash"] . "\n";
-        exit(2);
+        exit(4);
     }
     echo "The hash matched between GitVersion and gitinfo.json.\n";
 

@@ -57,6 +57,13 @@
 		public function getRef(){
 			return $this->git_ref;
 		}
+
+		/*
+		 * Get the branch name.
+		 */
+		public function getBranch(){
+			return $this->git_branch;
+		}
 		
 		/*
 		 * Get the Git commit short hash and branch name.
