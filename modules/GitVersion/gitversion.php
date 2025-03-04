@@ -12,21 +12,21 @@
 		 * @param $short_hash_length The short hash size. (Default: 7)
 		 * @return void
 		 */
-		public function __construct($git_loc, $short_hash_length = 7){
+		public function __construct($git_loc, $git_loc_full = false, $short_hash_length = 7){
 			
+			$git_loc = ($git_loc_full ? $git_loc : realpath($git_loc . "/.git/"));
+
 			if(!file_exists($git_loc)){
-				throw new Exception("Cannot find .git folder. Please make sure the .git folder is at " . __DIR__ . "/../.git/");
+				throw new Exception("Cannot find .git folder. Please make sure the .git folder is at " . $git_loc);
 			}
-			
-			$git_loc = realpath($git_loc);
 			
 			if(!is_integer($short_hash_length)){
 				throw new Exception("short_hash_length needs to be a integer.");
 			}
 			
-			$this->git_ref = implode("\n", array_slice(explode("\n", str_replace("ref: ", "", file_get_contents($git_loc . "/.git/HEAD"))), 0, 1));
+			$this->git_ref = implode("\n", array_slice(explode("\n", str_replace("ref: ", "", file_get_contents($git_loc . "/HEAD"))), 0, 1));
 			$this->git_branch = preg_replace('/^.*\/\s*/', '', $this->git_ref);
-			$this->git_hash = implode("\n", array_slice(explode("\n", file_get_contents($git_loc . "/.git/" . $this->git_ref)), 0, 1));
+			$this->git_hash = implode("\n", array_slice(explode("\n", file_get_contents($git_loc . "/" . $this->git_ref)), 0, 1));
 			
 			if($short_hash_length > strlen($this->git_hash)){
 				throw new Exception("short_hash_length cannot be larger then the hash itself.");
