@@ -28,7 +28,7 @@ jobs:
       
       - name: Configure local environment
         run: |
-            echo "{ \"ref\": \"${{ github.head_ref }}\", \"hash\": \"${{ github.sha }}\" }" > .github/tests/gitinfo.json
+            echo "{ \"ref\": \"${{ github.GITHUB_REF }}\", \"hash\": \"${{ github.SHA }}\" }" > .github/tests/gitinfo.json
             cat .github/tests/gitinfo.json
 
       - name: Run tests
