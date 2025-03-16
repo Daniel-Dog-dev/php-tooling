@@ -38,14 +38,14 @@
 			
 			$this->git_hash_short = substr($this->git_hash, 0, $short_hash_length);
 
-			$file_version_loc = ($file_version_full_loc ? $file_version_loc : realpath($file_version_loc));
-
 			if($file_version_loc != null){
+
+				$file_version_loc = ($file_version_full_loc ? $file_version_loc : realpath($file_version_loc));
+
 				if(!file_exists($file_version_loc)){
 					throw new Exception("Cannot find version file. Please make sure the version file is at " . $file_version_loc);
 				}
 				$this->file_version = file_get_contents($file_version_loc);
-				echo $file_version_loc . "\n";
 			}
 		}
 		

@@ -108,8 +108,5 @@
     }
     echo "Version (file) text matched between GitVersion and gitinfo.json.\n";
 
-    echo var_dump($gitversion) . "\n";
-    echo var_dump($gitversion_fileversion) . "\n";
-
     exit(0);
 ?>
