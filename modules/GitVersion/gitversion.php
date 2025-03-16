@@ -83,8 +83,8 @@
 		 * Get the Git commit short hash and branch name.
 		 * @return string
 		 */
-		public function getVersion(){
-			return ($this->file_version == null ? "" : $this->file_version . " ") . $this->getShortHash() . " (" . $this->git_branch . ")";
+		public function getVersion($hide_branchname = false){
+			return ($this->file_version == null ? "" : $this->file_version . " ") . $this->getShortHash() . ($hide_branchname ? "" : " (" . $this->git_branch . ")");
 		}
 
 		/*
