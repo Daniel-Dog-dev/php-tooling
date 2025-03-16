@@ -93,7 +93,7 @@
     echo "Check if file version matches between GitVersion and gitinfo.json.\n";
     if($gitversion_fileversion->getFileVersion() != $github_runner_gitinfo["file"]){
         echo "The Git branch name of GitVersion did not match the gitinfo.json ref!\n";
-        echo "GitVersion: " . $$gitversion_fileversion->getFileVersion() . "\n";
+        echo "GitVersion: " . $gitversion_fileversion->getFileVersion() . "\n";
         echo "gitinfo.json: " . $github_runner_gitinfo["file"] . "\n";
         exit(8);
     }
