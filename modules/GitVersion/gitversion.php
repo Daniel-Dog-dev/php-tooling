@@ -40,11 +40,12 @@
 
 			$file_version_loc = ($file_version_full_loc ? $file_version_loc : realpath($file_version_loc));
 
-			if(!file_exists($file_version_loc)){
-				throw new Exception("Cannot find version file. Please make sure the version file is at " . $file_version_loc);
+			if($file_version_loc != null){
+				if(!file_exists($file_version_loc)){
+					throw new Exception("Cannot find version file. Please make sure the version file is at " . $file_version_loc);
+				}
+				$this->file_version = file_get_contents($file_version_loc);
 			}
-
-			$this->file_version = file_get_contents($file_version_loc);
 		}
 		
 		/*
@@ -87,7 +88,7 @@
 
 		/*
 		 * Get the version of the version file.
-		 * @return string
+		 * @return string|null
 		 */
 		public function getFileVersion(){
 			return $this->file_version;
