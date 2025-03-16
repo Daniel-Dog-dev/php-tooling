@@ -32,7 +32,8 @@
     }
 
     $github_runner_gitinfo = json_decode(file_get_contents(__DIR__ . "/gitinfo.json"), true);
-    $gitversion = new GitVersion(__DIR__ . "/../../");
+    $gitversion = new GitVersion(__DIR__ . "/../../", false);
+    $gitversion_fileversion = new GitVersion(__DIR__ . "/../../", false, 7, __DIR__ . "/../../version.txt", false);
 
     echo "Check if ref matches between GitVersion and gitinfo.json.\n";
     if($gitversion->getRef() != $github_runner_gitinfo["ref"]){
@@ -87,7 +88,25 @@
         echo "gitinfo.json: " . substr($github_runner_gitinfo["hash"], 0, 7) . " (" . $github_runner_gitinfo["branch"] . ")\n";
         exit(7);
     }
-    echo "Version text matched between GitVersion and gitinfo.json.";
+    echo "Version text matched between GitVersion and gitinfo.json.\n";
+
+    echo "Check if file version matches between GitVersion and gitinfo.json.\n";
+    if($gitversion_fileversion->getFileVersion() != $github_runner_gitinfo["file"]){
+        echo "The Git branch name of GitVersion did not match the gitinfo.json ref!\n";
+        echo "GitVersion: " . $$gitversion_fileversion->getFileVersion() . "\n";
+        echo "gitinfo.json: " . $github_runner_gitinfo["file"] . "\n";
+        exit(8);
+    }
+    echo "The file version matched between GitVersion and gitinfo.json.\n";
+
+    echo "Check if the (file) version text matches between GitVersion and gitinfo.json.\n";
+    if($gitversion_fileversion->getVersion() != $github_runner_gitinfo["file"] . " " . substr($github_runner_gitinfo["hash"], 0, 7) . " (" . $github_runner_gitinfo["branch"] . ")"){
+        echo "The Git hash of GitVersion did not match the gitinfo.json hash!\n";
+        echo "GitVersion: " . $gitversion_fileversion->getVersion() . "\n";
+        echo "gitinfo.json: " . $github_runner_gitinfo["file"] . " " . substr($github_runner_gitinfo["hash"], 0, 7) . " (" . $github_runner_gitinfo["branch"] . ")\n";
+        exit(9);
+    }
+    echo "Version (file) text matched between GitVersion and gitinfo.json.\n";
 
     exit(0);
 ?>
