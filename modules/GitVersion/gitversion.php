@@ -45,6 +45,7 @@
 					throw new Exception("Cannot find version file. Please make sure the version file is at " . $file_version_loc);
 				}
 				$this->file_version = file_get_contents($file_version_loc);
+				echo $file_version_loc . "\n";
 			}
 		}
 		
