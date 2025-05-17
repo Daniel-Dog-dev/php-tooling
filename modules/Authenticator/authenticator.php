@@ -92,7 +92,10 @@
                     return true;
                 }
             }
-            return $this->authenticateOpenID();
+            if($this->authenticateOpenID()){
+                header("Location: " . $this->openid_connect->getRedirectURL());
+                return true;
+            }
         }
 
         /*
