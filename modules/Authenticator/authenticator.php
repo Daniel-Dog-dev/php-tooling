@@ -203,8 +203,20 @@
             return false;
         }
 
+        /*
+         * Get username of user.
+         * @return string|null
+         */
         public function getUsername() {
-            
+            return $this->user_username;
+        }
+
+        /*
+         * Get username of user.
+         * @return string|null
+         */
+        public function getUserEmail() {
+            return $this->user_email;
         }
     }
 
