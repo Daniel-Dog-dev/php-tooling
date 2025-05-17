@@ -31,6 +31,10 @@
         private $conn = null;
         private $cookiedomain = null;
 
+        private $user_id = null;
+        private $user_username = null;
+        private $user_email = null;
+
         /*
          * Constructor for Authenticator class.
          * @param $conn mysqli The MySQLi class for database access.
@@ -99,18 +103,18 @@
 
             $token = $_COOKIE["auth"];
 
-            if($stmt = $this->conn->prepare("SELECT `users`.`id` FROM `users`, `users_tokens` WHERE `token` = ? AND `users_id` = `users`.`id` AND `valid_till` > CURRENT_TIMESTAMP()")){
+            if($stmt = $this->conn->prepare("SELECT `users`.`id`, `users`.`username`, `users`.`email` FROM `users`, `users_tokens` WHERE `token` = ? AND `users_id` = `users`.`id` AND `valid_till` > CURRENT_TIMESTAMP()")){
 				$stmt->bind_param("s", $token);
 				$stmt->execute();
-				$stmt->bind_result($user_id);
+				$stmt->bind_result($this->user_id, $this->user_username, $this->user_email);
 				$stmt->fetch();
 				$stmt->close();
-				if($user_id == null){
+				if($this->user_id == null){
 					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
 					return false;
 				}
                 if($stmt2 = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
-                    $stmt2->bind_param("si", $token, $user_id);
+                    $stmt2->bind_param("si", $token, $this->user_id);
                     $stmt2->execute();
                     $stmt2->close();
                     setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
@@ -118,7 +122,6 @@
                     unset($token);
                     unset($stmt);
                     unset($stmt2);
-                    unset($user_id);
                     return true;
                 }
 			}
@@ -126,7 +129,6 @@
             unset($token);
             unset($stmt);
             unset($stmt2);
-            unset($user_id);
             return false;
         }
 
@@ -151,13 +153,13 @@
 
             if($user_uuid == null){ return false; }
 
-            if($stmt = $this->conn->prepare("SELECT `id` FROM `users` WHERE `uuid` = ?")){
+            if($stmt = $this->conn->prepare("SELECT `users`.`id`, `users`.`username`, `users`.`email` FROM `users` WHERE `uuid` = ?")){
 				$stmt->bind_param("s", $user_uuid);
 				$stmt->execute();
-				$stmt->bind_result($user_id);
+				$stmt->bind_result($this->user_id, $this->user_username, $this->user_email);
 				$stmt->fetch();
 				$stmt->close();
-				if($user_id == null){
+				if($this->user_id == null){
 					return false;
 				}
 
@@ -169,7 +171,7 @@
                 }
 
                 if($stmt = $this->conn->prepare("INSERT INTO `users_tokens` (`id`, `users_id`) VALUES (?,?)")){
-                    $stmt->bind_param("si", $uuid, $user_id);
+                    $stmt->bind_param("si", $uuid, $this->user_id);
 				    $stmt->execute();
 
                     if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE `id` = ?")){
@@ -181,7 +183,6 @@
 
                         setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
                         unset($user_uuid);
-                        unset($user_id);
                         unset($stmt);
                         unset($stmt2);
                         unset($uuid);
@@ -195,12 +196,15 @@
 			}
 
             unset($user_uuid);
-            unset($user_id);
             unset($stmt);
             unset($stmt2);
             unset($uuid);
             unset($token);
             return false;
+        }
+
+        public function getUsername() {
+            
         }
     }
 
