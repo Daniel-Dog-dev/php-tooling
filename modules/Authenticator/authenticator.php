@@ -81,6 +81,7 @@
         private function authenticateCookie(){
 
             $token = $_COOKIE["auth"];
+            echo "Token: " . $token;
 
             if($stmt = $this->conn->prepare("SELECT `users`.`id` FROM `users`, `users_tokens` WHERE `token` = ? AND `users_id` = `users`.`id` AND `valid_till` > CURRENT_TIMESTAMP()")){
 				$stmt->bind_param("s", $token);
@@ -90,6 +91,7 @@
 				$stmt->close();
 				if($user_id == null){
 					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
+                    die();
 					return $this->authenticateOpenID();
 				}
                 if($stmt2 = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
@@ -125,7 +127,7 @@
                 $this->openid_connect->authenticate();
                 $user_uuid = $this->openid_connect->requestUserInfo("sub");
             } catch (Jumbojett\OpenIDConnectClientException $ex) {
-                throw new Exception($ex->getMessage());
+                return false;
             }
 
             if($user_uuid == null){ return false; }
