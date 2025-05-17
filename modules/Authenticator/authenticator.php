@@ -91,7 +91,6 @@
 				$stmt->close();
 				if($user_id == null){
 					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
-                    die();
 					return $this->authenticateOpenID();
 				}
                 if($stmt2 = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
@@ -147,7 +146,7 @@
 				    $stmt->execute();
                     $token_id = $stmt->insert_id;
 
-                    if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE id = UUID_TO_BIN(?)")){
+                    if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE `id` = ?")){
                         $stmt2->bind_param("s", $token_id);
                         $stmt2->execute();
                         $stmt2->bind_result($token);
