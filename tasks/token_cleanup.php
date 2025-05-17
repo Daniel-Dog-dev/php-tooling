@@ -7,6 +7,7 @@
     }
     require(__DIR__ . "/../../config/config.php");
 
+    $conn = new mysqli($hostname, $username, $password, $database, $port);
     $conn->query("DELETE FROM `users_tokens` WHERE `valid_till` < CURRENT_TIMESTAMP()");
     exit(0);
 
