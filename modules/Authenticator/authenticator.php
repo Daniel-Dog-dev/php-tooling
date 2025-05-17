@@ -125,7 +125,7 @@
                 $this->openid_connect->authenticate();
                 $user_uuid = $this->openid_connect->requestUserInfo("sub");
             } catch (Jumbojett\OpenIDConnectClientException) {
-                return false;
+                throw new Exception("OpenID");
             }
 
             if($user_uuid == null){ return false; }
