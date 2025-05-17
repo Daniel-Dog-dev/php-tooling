@@ -31,6 +31,14 @@
         private $conn = null;
         private $cookiedomain = null;
 
+        /*
+         * Constructor for Authenticator class.
+         * @param $conn mysqli The MySQLi class for database access.
+         * @param $cookiedomain The domain for the auth cookie.
+         * @param $openid_url The OpenID URL.
+         * @param $openid_client The client name for OpenID.
+         * @param $openid_secret The client secret for OpenID.
+         */
         public function __construct($conn, $cookiedomain, $openid_url, $openid_client, $openid_secret){
 
             if(!$conn instanceof mysqli){
@@ -70,14 +78,23 @@
             $this->cookiedomain = $cookiedomain;
         }
 
+        /*
+         * Authenticate a user.
+         * @return true if authentication is successfull | false if authentication failed.
+         */
         public function authenticate(){
             if(!empty($_COOKIE["auth"])){
-                return $this->authenticateCookie();
+                if($this->authenticateCookie()) {
+                    return true;
+                }
             }
-
             return $this->authenticateOpenID();
         }
 
+        /*
+         * Authentication via a cookie token.
+         * @return true if authentication is successfull | false if authentication failed.
+         */
         private function authenticateCookie(){
 
             $token = $_COOKIE["auth"];
@@ -90,7 +107,7 @@
 				$stmt->close();
 				if($user_id == null){
 					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
-					return $this->authenticateOpenID();
+					return false;
 				}
                 if($stmt2 = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
                     $stmt2->bind_param("si", $token, $user_id);
@@ -113,6 +130,10 @@
             return false;
         }
 
+        /*
+         * Authentication via OpenID.
+         * @return true if authentication is successfull | false if authentication failed.
+         */
         private function authenticateOpenID(){
 
             $user_uuid = null;
