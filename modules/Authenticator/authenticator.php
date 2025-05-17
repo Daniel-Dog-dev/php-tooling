@@ -81,7 +81,6 @@
         private function authenticateCookie(){
 
             $token = $_COOKIE["auth"];
-            echo "Token: " . $token;
 
             if($stmt = $this->conn->prepare("SELECT `users`.`id` FROM `users`, `users_tokens` WHERE `token` = ? AND `users_id` = `users`.`id` AND `valid_till` > CURRENT_TIMESTAMP()")){
 				$stmt->bind_param("s", $token);
