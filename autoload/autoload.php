@@ -25,5 +25,6 @@
     */
 
 	require(__DIR__ . "/../modules/GitVersion/gitversion.php");
+    require(__DIR__ . "/../modules/Authenticator/authenticator.php");
 
 ?>
