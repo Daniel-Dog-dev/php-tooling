@@ -147,8 +147,8 @@
 				    $stmt->execute();
                     $token_id = $stmt->insert_id;
 
-                    if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE `id` = ?")){
-                        $stmt2->bind_param("i", $token_id);
+                    if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE id = UUID_TO_BIN(?)")){
+                        $stmt2->bind_param("s", $token_id);
                         $stmt2->execute();
                         $stmt2->bind_result($token);
                         $stmt2->fetch();
