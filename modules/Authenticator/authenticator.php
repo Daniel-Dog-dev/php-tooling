@@ -95,7 +95,7 @@
                 if($stmt2 = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
                     $stmt2->bind_param("si", $token, $user_id);
                     $stmt2->execute();
-                    $stmt->close();
+                    $stmt2->close();
                     setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
 
                     unset($token);
