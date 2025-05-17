@@ -5,6 +5,7 @@
         echo "Looked at location: " . __DIR__ . "/../../config/config.php";
         exit(1);
     }
+    require(__DIR__ . "/../../config/config.php");
 
     $conn->query("DELETE FROM `users_tokens` WHERE `valid_till` < CURRENT_TIMESTAMP()");
     exit(0);
