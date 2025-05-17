@@ -52,6 +52,8 @@ jobs:
         run: |
             echo "{ \"ref\": \"${{ github.REF }}\", \"branch\": \"${{ github.REF_NAME }}\", \"hash\": \"${{ github.SHA }}\", \"file\": \"$(cat version.txt)\" }" > .github/tests/gitinfo.json
             cat .github/tests/gitinfo.json
+            mkdir ./vendor/
+            echo "<?php ?>" > ./vendor/autoload.php
 
       - name: Run tests
         run: |
