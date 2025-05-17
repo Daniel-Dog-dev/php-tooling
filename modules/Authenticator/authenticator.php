@@ -148,7 +148,9 @@
                     if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE `id` = ?")){
                         $stmt2->bind_param("i", $token_id);
                         $stmt2->execute();
-                        $token = $stmt->insert_id;
+                        $stmt2->bind_result($token);
+                        $stmt2->fetch();
+                        $stmt2->close();
 
                         setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
                         unset($user_uuid);
