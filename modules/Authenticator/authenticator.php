@@ -141,13 +141,19 @@
 					return false;
 				}
 
-                if($stmt = $this->conn->prepare("INSERT INTO `users_tokens` (`users_id`) VALUES (?)")){
-                    $stmt->bind_param("i", $user_id);
+                $uuid = null;
+                if($uuid_result = $this->conn->query("SELECT uuid()")){
+                    $uuid = $uuid_result->fetch_row()[0];
+			        $uuid_result->close();
+                    unset($uuid_result);
+                }
+
+                if($stmt = $this->conn->prepare("INSERT INTO `users_tokens` (`id`, `users_id`) VALUES (?,?)")){
+                    $stmt->bind_param("si", $uuid, $user_id);
 				    $stmt->execute();
-                    $token_id = $stmt->insert_id;
 
                     if($stmt2 = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE `id` = ?")){
-                        $stmt2->bind_param("s", $token_id);
+                        $stmt2->bind_param("s", $uuid);
                         $stmt2->execute();
                         $stmt2->bind_result($token);
                         $stmt2->fetch();
@@ -158,7 +164,7 @@
                         unset($user_id);
                         unset($stmt);
                         unset($stmt2);
-                        unset($token_id);
+                        unset($uuid);
                         unset($token);
                         return true;
                     }
@@ -172,7 +178,7 @@
             unset($user_id);
             unset($stmt);
             unset($stmt2);
-            unset($token_id);
+            unset($uuid);
             unset($token);
             return false;
         }
