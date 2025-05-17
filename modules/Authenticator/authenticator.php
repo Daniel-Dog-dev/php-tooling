@@ -37,25 +37,32 @@
                 throw new Exception("conn needs to be a mysqli class.", 1);
             }
 
-            if(!is_string($openid_url)){
-                throw new Exception("openid URL needs to be a string.", 2);
+            if(!is_string($cookiedomain)){
+                throw new Exception("cookie domain needs to be a string.", 2);
             }
-            if(!empty($openid_url)){
-                throw new Exception("openid URL needs to have a value", 2);
+            if(empty($cookiedomain)){
+                throw new Exception("cookie domain needs to have a value", 2);
             }
 
-            if(!is_string($openid_client)){
-                throw new Exception("openid Client needs to be a string.", 3);
+            if(!is_string($openid_url)){
+                throw new Exception("openid URL needs to be a string.", 3);
             }
-            if(!empty($openid_client)){
+            if(empty($openid_url)){
                 throw new Exception("openid URL needs to have a value", 3);
             }
 
-            if(!is_string($openid_secret)){
-                throw new Exception("openid Secret needs to be a string.", 4);
+            if(!is_string($openid_client)){
+                throw new Exception("openid Client needs to be a string.", 4);
             }
-            if(!empty($openid_secret)){
+            if(empty($openid_client)){
                 throw new Exception("openid URL needs to have a value", 4);
+            }
+
+            if(!is_string($openid_secret)){
+                throw new Exception("openid Secret needs to be a string.", 5);
+            }
+            if(empty($openid_secret)){
+                throw new Exception("openid URL needs to have a value", 5);
             }
 
             $this->openid_connect = new OpenIDConnectClient($openid_url, $openid_client, $openid_secret);
