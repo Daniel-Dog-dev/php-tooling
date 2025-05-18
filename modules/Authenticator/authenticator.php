@@ -228,6 +228,10 @@
         public function getUserEmail() {
             return $this->user_email;
         }
+
+        public function getPerformanceChecker(){
+            return clone $this->performce_check;
+        }
     }
 
 ?>
