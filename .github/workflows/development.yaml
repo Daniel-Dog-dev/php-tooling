@@ -50,8 +50,10 @@ jobs:
       
       - name: Configure local environment
         run: |
-            echo "{ \"ref\": \"${{ github.REF }}\", \"branch\": \"${{ github.REF_NAME }}\", \"hash\": \"${{ github.SHA }}\", \"file\": \"1.1.1\" }" > .github/tests/gitinfo.json
+            echo "{ \"ref\": \"${{ github.REF }}\", \"branch\": \"${{ github.REF_NAME }}\", \"hash\": \"${{ github.SHA }}\", \"file\": \"$(cat version.txt)\" }" > .github/tests/gitinfo.json
             cat .github/tests/gitinfo.json
+            mkdir ./vendor/
+            echo "<?php ?>" > ./vendor/autoload.php
 
       - name: Run tests
         run: |

@@ -1,6 +1,6 @@
 <?php
 
-	/*
+    /*
     MIT License
 
     Copyright (c) 2025 Daniel-Dog-dev
@@ -24,9 +24,29 @@
     SOFTWARE.
     */
 
-    require(__DIR__ . "/../vendor/autoload.php");
-    require(__DIR__ . "/../modules/PerformanceChecker/performancechecker.php");
-	require(__DIR__ . "/../modules/GitVersion/gitversion.php");
-    require(__DIR__ . "/../modules/Authenticator/authenticator.php");
+    class PerformanceChecker {
+        private $start = array();
+        private $stop = array();
+
+        public function start($message = ""){
+            $this->start[] = array("time" => microtime(true), "message" => $message);
+        }
+
+        public function stop(){
+            $this->stop[] = array("time" => microtime(true));
+        }
+
+        public function getTimes(){
+            $returndata = array();
+            foreach($this->start as $key => $data){
+                if(!array_key_exists($key, $this->stop)){ 
+                    $returndata[$key] = array("time" => $this->start[$key]["time"], "message" => $this->start[$key]["message"]);
+                }
+                $returndata[$key] = array("time" => (round($this->stop[$key]["time"] - $this->start[$key]["time"], 2)), "message" => $this->start[$key]["message"]);
+            }
+            return $returndata;
+        }
+
+    }
 
 ?>
