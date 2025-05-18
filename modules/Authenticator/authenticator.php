@@ -151,7 +151,7 @@
             try {
                 $this->openid_connect->authenticate();
                 $user_uuid = $this->openid_connect->requestUserInfo("sub");
-            } catch (Jumbojett\OpenIDConnectClientException $ex) {
+            } catch (Jumbojett\OpenIDConnectClientException) {
                 return false;
             }
 
@@ -164,7 +164,9 @@
 				$stmt->fetch();
 				$stmt->close();
 				if($this->user_id == null){
-					return false;
+					if(!$this->createUser()){
+                        return false;
+                    }
 				}
 
                 $uuid = null;
@@ -204,6 +206,44 @@
             unset($stmt2);
             unset($uuid);
             unset($token);
+            return false;
+        }
+
+        private function createUser(){
+            $uuid = null;
+            $username = null;
+            $email = null;
+
+            try {
+                $uuid = $this->openid_connect->requestUserInfo("sub");
+                $username = $this->openid_connect->requestUserInfo("preferred_username");
+                $email = $this->openid_connect->requestUserInfo("email");
+            } catch (Jumbojett\OpenIDConnectClientException) {
+                return false;
+            }
+
+            if($uuid == null || $username == null || $email == null){
+                unset($uuid);
+                unset($username);
+                unset($email);
+                return false;
+            }
+
+            if($stmt = $this->conn->prepare("INSERT INTO users (uuid, username, email) VALUES (?,?,?)")){
+				$stmt->bind_param("sss", $uuid, $username, $email);
+				$stmt->execute();
+                $this->user_id = $stmt->insert_id;
+				$stmt->close();
+
+                unset($uuid);
+                unset($username);
+                unset($email);
+                return true;
+            }
+
+            unset($uuid);
+            unset($username);
+            unset($email);
             return false;
         }
 
