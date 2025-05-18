@@ -34,6 +34,7 @@
         private $user_id = null;
         private $user_username = null;
         private $user_email = null;
+        private $performce_check = null;
 
         /*
          * Constructor for Authenticator class.
@@ -80,6 +81,7 @@
             $this->openid_connect = new OpenIDConnectClient($openid_url, $openid_client, $openid_secret);
             $this->conn = $conn;
             $this->cookiedomain = $cookiedomain;
+            $this->performce_check = new PerformanceChecker();
         }
 
         /*
@@ -106,20 +108,25 @@
 
             $token = $_COOKIE["auth"];
 
+            $this->performce_check->start("get userinfo from DB via token.");
             if($stmt = $this->conn->prepare("SELECT `users`.`id`, `users`.`username`, `users`.`email` FROM `users`, `users_tokens` WHERE `token` = ? AND `users_id` = `users`.`id` AND `valid_till` > CURRENT_TIMESTAMP()")){
 				$stmt->bind_param("s", $token);
 				$stmt->execute();
 				$stmt->bind_result($this->user_id, $this->user_username, $this->user_email);
 				$stmt->fetch();
 				$stmt->close();
+                $this->performce_check->stop();
 				if($this->user_id == null){
 					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
 					return false;
 				}
+
+                $this->performce_check->start("update valid till to reset tp +30 min.");
                 if($stmt2 = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
                     $stmt2->bind_param("si", $token, $this->user_id);
                     $stmt2->execute();
                     $stmt2->close();
+                    $this->performce_check->stop();
                     setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
 
                     unset($token);
