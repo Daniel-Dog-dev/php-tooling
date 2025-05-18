@@ -29,27 +29,22 @@
         private $stop = array();
 
         public function start($message = ""){
-            if(!array_key_exists((count($this->start) - 1), $this->stop)){
-                return false;
-            }
             $this->start[] = array("time" => microtime(true), "message" => $message);
-            return true;
         }
 
         public function stop(){
-            if(!array_key_exists((count($this->stop) - 1), $this->start)){
-                return false;
-            }
             $this->stop[] = array("time" => microtime(true));
         }
 
         public function getTimes(){
-            $data = array();
+            $returndata = array();
             foreach($this->start as $key => $data){
-                if(!array_key_exists($key, $this->stop)){ continue; }
-                $data[$key] = array("time" => ($this->start[$key]["time"] - $this->stop[$key]["time"]), "message" => $this->start[$key]["message"]);
+                if(!array_key_exists($key, $this->stop)){ 
+                    $returndata[$key] = array("time" => $this->start[$key]["time"], "message" => $this->start[$key]["message"]);
+                }
+                $returndata[$key] = array("time" => (round($this->stop[$key]["time"] - $this->start[$key]["time"], 2)), "message" => $this->start[$key]["message"]);
             }
-            return $data;
+            return $returndata;
         }
 
     }
