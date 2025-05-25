@@ -267,6 +267,22 @@
         public function getEmail() {
             return $this->user_email;
         }
+
+        public function getRole(){
+            if($stmt = $this->conn->prepare("SELECT `user_role`.`name` FROM `users` LEFT JOIN `roles` `user_role` on `users`.`role` = `user_role`.`id` WHERE `users`.`id` = ?")){
+				$stmt->bind_param("i", $this->user_id);
+                if(!$stmt->execute()){
+                    return false;
+                }
+                $stmt->bind_result($role);
+                $stmt->fetch();
+				$stmt->close();
+                unset($stmt);
+                return $role;
+            }
+            unset($stmt);
+            return null;
+        }
     }
 
 ?>
