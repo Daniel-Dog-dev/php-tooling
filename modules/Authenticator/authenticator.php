@@ -90,16 +90,17 @@
          * Authenticate a user.
          * @return true if authentication is successfull | false if authentication failed.
          */
-        public function authenticate(){
+        public function authenticate($auto_redirect = true){
             if(!empty($_COOKIE["auth"])){
                 if($this->authenticateCookie()) {
                     return true;
                 }
             }
-            if($this->authenticateOpenID()){
+            if($auto_redirect && $this->authenticateOpenID()){
                 header("Location: " . $this->openid_connect->getRedirectURL());
                 return true;
             }
+            return false;
         }
 
         /*
