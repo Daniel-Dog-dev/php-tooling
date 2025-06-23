@@ -79,6 +79,9 @@
             }
 
             $this->openid_connect = new OpenIDConnectClient($openid_url, $openid_client, $openid_secret);
+            if($cookiedomain == "localhost"){
+                $this->openid_connect->setHttpUpgradeInsecureRequests(false);
+            }
             $this->conn = $conn;
             $this->cookiedomain = $cookiedomain;
         }
@@ -141,11 +144,6 @@
          * @return true if authentication is successfull | false if authentication failed.
          */
         private function authenticateOpenID(){
-
-            if(str_starts_with($this->openid_connect->getRedirectURL(), "https://localhost")){
-                $this->openid_connect->setRedirectURL(str_replace("https://", "http://", $this->openid_connect->getRedirectURL()));
-            }
-
             try {
                 if(!$this->openid_connect->authenticate()){
                     return false;
