@@ -120,7 +120,7 @@
                 unset($stmt);
 
 				if($this->user_id == null){
-					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
+					setcookie("auth", "", ['expires' => time() - 1800, 'path' => '/themeparks/v2/endpoint/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
 					return false;
 				}
 
@@ -129,7 +129,7 @@
                     $stmt->execute();
                     $stmt->close();
                     unset($stmt);
-                    setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
+                    setcookie("auth", $token, ['expires' => time() + 1800, 'path' => '/themeparks/v2/endpoint/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
 
                     unset($token);
                     return true;
@@ -155,7 +155,85 @@
             } catch (Jumbojett\OpenIDConnectClientException) {
                 return false;
             }
+            return $this->setAuthCookies();
+        }
 
+        private function createUser(){
+            if($stmt = $this->conn->prepare("INSERT INTO users (uuid, username, email) VALUES (?,?,?)")){
+				$stmt->bind_param("sss", $this->user_uuid, $this->user_username, $this->user_email);
+                if(!$stmt->execute()){
+                    return false;
+                }
+                $this->user_id = $stmt->insert_id;
+				$stmt->close();
+                unset($stmt);
+                return true;
+            }
+            unset($stmt);
+            return false;
+        }
+
+        /*
+         * Get the UUID of the user.
+         * @return string|null
+         */
+        public function getUUID() {
+            return $this->user_uuid;
+        }
+
+        /**
+         * Get the username of the user.
+         * @return string|null
+         */
+        public function getUsername() {
+            return $this->user_username;
+        }
+
+        /**
+         * Get the email of the user.
+         * @return string|null
+         */
+        public function getEmail() {
+            return $this->user_email;
+        }
+
+        public function getRole(){
+            if($stmt = $this->conn->prepare("SELECT `user_role`.`name` FROM `users` LEFT JOIN `roles` `user_role` on `users`.`role` = `user_role`.`id` WHERE `users`.`id` = ?")){
+				$stmt->bind_param("i", $this->user_id);
+                if(!$stmt->execute()){
+                    return false;
+                }
+                $stmt->bind_result($role);
+                $stmt->fetch();
+				$stmt->close();
+                unset($stmt);
+                return $role;
+            }
+            unset($stmt);
+            return null;
+        }
+
+        /**
+         * Set the refresh token for the auth request.
+         * @param string $token The refresh token.
+         * @return void
+         */
+        public function authenticateRefreshToken($token){
+
+            try {
+                $this->openid_connect->addScope(array("openid"));
+                $this->openid_connect->refreshToken($token);
+                $this->user_uuid = $this->openid_connect->requestUserInfo("sub");
+                $this->user_username = $this->openid_connect->requestUserInfo("preferred_username");
+                $this->user_email = $this->openid_connect->requestUserInfo("email");
+                $this->setAuthCookies();
+                return true;
+            } catch (Jumbojett\OpenIDConnectClientException) {
+                return false;
+            }
+        }
+
+        private function setAuthCookies(){
             if($this->user_uuid == null){ return false; }
 
             if($stmt = $this->conn->prepare("SELECT `users`.`id`, `users`.`username`, `users`.`email` FROM `users` WHERE `uuid` = ?")){
@@ -214,73 +292,17 @@
                         $stmt->close();
                         unset($stmt);
 
-                        setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
+                        setcookie("auth", $token, ['expires' => time() + 1800, 'path' => '/themeparks/v2/endpoint/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                        setcookie("refresh", $this->openid_connect->getRefreshToken(), ['expires' => time() + 60 * 60 * 8, 'path' => '/themeparks/v2/account/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
                         unset($uuid);
                         unset($token);
                         return true;
                     }
                 }
-
 			}
-
             unset($uuid);
             unset($token);
             return false;
-        }
-
-        private function createUser(){
-            if($stmt = $this->conn->prepare("INSERT INTO users (uuid, username, email) VALUES (?,?,?)")){
-				$stmt->bind_param("sss", $this->user_uuid, $this->user_username, $this->user_email);
-                if(!$stmt->execute()){
-                    return false;
-                }
-                $this->user_id = $stmt->insert_id;
-				$stmt->close();
-                unset($stmt);
-                return true;
-            }
-            unset($stmt);
-            return false;
-        }
-
-        /*
-         * Get the UUID of the user.
-         * @return string|null
-         */
-        public function getUUID() {
-            return $this->user_uuid;
-        }
-
-        /*
-         * Get the username of the user.
-         * @return string|null
-         */
-        public function getUsername() {
-            return $this->user_username;
-        }
-
-        /*
-         * Get the email of the user.
-         * @return string|null
-         */
-        public function getEmail() {
-            return $this->user_email;
-        }
-
-        public function getRole(){
-            if($stmt = $this->conn->prepare("SELECT `user_role`.`name` FROM `users` LEFT JOIN `roles` `user_role` on `users`.`role` = `user_role`.`id` WHERE `users`.`id` = ?")){
-				$stmt->bind_param("i", $this->user_id);
-                if(!$stmt->execute()){
-                    return false;
-                }
-                $stmt->bind_result($role);
-                $stmt->fetch();
-				$stmt->close();
-                unset($stmt);
-                return $role;
-            }
-            unset($stmt);
-            return null;
         }
     }
 
