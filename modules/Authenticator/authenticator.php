@@ -229,6 +229,8 @@
                 $this->setAuthCookies();
                 return true;
             } catch (Jumbojett\OpenIDConnectClientException) {
+                setcookie("refresh", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                setcookie("auth", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
                 return false;
             }
         }
