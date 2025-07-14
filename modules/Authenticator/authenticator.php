@@ -120,7 +120,7 @@
                 unset($stmt);
 
 				if($this->user_id == null){
-					setcookie("auth", "", ['expires' => time() - 1800, 'path' => '/themeparks/v2/endpoint/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+					setcookie("auth", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
 					return false;
 				}
 
@@ -129,7 +129,7 @@
                     $stmt->execute();
                     $stmt->close();
                     unset($stmt);
-                    setcookie("auth", $token, ['expires' => time() + 1800, 'path' => '/themeparks/v2/endpoint/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                    setcookie("auth", $token, ['expires' => time() + 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
 
                     unset($token);
                     return true;
@@ -292,7 +292,7 @@
                         $stmt->close();
                         unset($stmt);
 
-                        setcookie("auth", $token, ['expires' => time() + 1800, 'path' => '/themeparks/v2/endpoint/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                        setcookie("auth", $token, ['expires' => time() + 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
                         setcookie("refresh", $this->openid_connect->getRefreshToken(), ['expires' => time() + 60 * 60 * 8, 'path' => '/themeparks/v2/account/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
                         unset($uuid);
                         unset($token);
