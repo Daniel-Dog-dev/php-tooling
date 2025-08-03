@@ -31,7 +31,6 @@
         private $conn = null;
         private $cookiedomain = null;
 
-        private $user_id = null;
         private $user_uuid = null;
         private $user_username = null;
         private $user_email = null;
@@ -68,19 +67,34 @@
                 throw new Exception("openid Client needs to be a string.", 4);
             }
             if(empty($openid_client)){
-                throw new Exception("openid URL needs to have a value", 4);
+                throw new Exception("openid Client needs to have a value", 4);
             }
 
             if(!is_string($openid_secret)){
                 throw new Exception("openid Secret needs to be a string.", 5);
             }
             if(empty($openid_secret)){
-                throw new Exception("openid URL needs to have a value", 5);
+                throw new Exception("openid Secret needs to have a value", 5);
             }
 
             $this->openid_connect = new OpenIDConnectClient($openid_url, $openid_client, $openid_secret);
+            if($cookiedomain == "localhost"){
+                $this->openid_connect->setHttpUpgradeInsecureRequests(false);
+            }
             $this->conn = $conn;
             $this->cookiedomain = $cookiedomain;
+        }
+
+        /**
+         * Login via OpenID provider.
+         * @return bool
+         */
+        public function login(){
+            if($this->authenticateOpenID()){
+                header("Refresh: 0; url=" . $this->openid_connect->getRedirectURL());
+                return true;
+            }
+            return false;
         }
 
         /*
@@ -88,51 +102,42 @@
          * @return true if authentication is successfull | false if authentication failed.
          */
         public function authenticate(){
-            if(!empty($_COOKIE["auth"])){
-                if($this->authenticateCookie()) {
-                    return true;
-                }
-            }
-            if($this->authenticateOpenID()){
-                header("Location: " . $this->openid_connect->getRedirectURL());
+            $access_token = empty($_COOKIE["access_token"]) ? null : $_COOKIE["access_token"];
+            $refresh_token = empty($_COOKIE["refresh_token"]) ? null : $_COOKIE["refresh_token"];
+
+            if($access_token !== null && $this->authenticateAccessToken($access_token)) {
+                unset($access_token);
+                unset($refresh_token);
                 return true;
             }
+            unset($access_token);
+
+            if($refresh_token !== null && $this->authenticateRefreshToken($refresh_token)) {
+                unset($refresh_token);
+                return true;
+            }
+            unset($refresh_token);
+            
+            return false;
         }
 
         /*
          * Authentication via a cookie token.
          * @return true if authentication is successfull | false if authentication failed.
          */
-        private function authenticateCookie(){
+        private function authenticateAccessToken($access_token){
+            $token_data = $this->openid_connect->introspectToken($access_token);
 
-            $token = $_COOKIE["auth"];
-
-            if($stmt = $this->conn->prepare("SELECT `users`.`id`, `users`.`username`, `users`.`email` FROM `users`, `users_tokens` WHERE `token` = ? AND `users_id` = `users`.`id` AND `valid_till` > CURRENT_TIMESTAMP()")){
-				$stmt->bind_param("s", $token);
-				$stmt->execute();
-				$stmt->bind_result($this->user_id, $this->user_username, $this->user_email);
-				$stmt->fetch();
-				$stmt->close();
-                unset($stmt);
-
-				if($this->user_id == null){
-					setcookie("auth", "", time() - 3600, "/", $this->cookiedomain, true, false);
-					return false;
-				}
-
-                if($stmt = $this->conn->prepare("UPDATE `users_tokens` SET `valid_till` = DEFAULT WHERE `token` = ? AND users_id = ?")){
-                    $stmt->bind_param("si", $token, $this->user_id);
-                    $stmt->execute();
-                    $stmt->close();
-                    unset($stmt);
-                    setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
-
-                    unset($token);
-                    return true;
-                }
-			}
-;           
-            unset($token);
+            if($token_data->active && $token_data->exp >= (time() + 30)){
+                $this->openid_connect->setAccessToken($access_token);
+                $this->user_uuid = $this->openid_connect->requestUserInfo("sub");
+                $this->user_username = $this->openid_connect->requestUserInfo("preferred_username");
+                $this->user_email = $this->openid_connect->requestUserInfo("email");
+                unset($token_data);
+                return true;
+            }
+            unset($token_data);
+            
             return false;
         }
 
@@ -141,106 +146,113 @@
          * @return true if authentication is successfull | false if authentication failed.
          */
         private function authenticateOpenID(){
-
-            if(str_starts_with($this->openid_connect->getRedirectURL(), "https://localhost")){
-                $this->openid_connect->setRedirectURL(str_replace("https://", "http://", $this->openid_connect->getRedirectURL()));
-            }
-
             try {
-                if(!$this->openid_connect->authenticate()){
+                if($this->openid_connect->authenticate()){
+                    $this->user_uuid = $this->openid_connect->requestUserInfo("sub");
+                    $this->user_username = $this->openid_connect->requestUserInfo("preferred_username");
+                    $this->user_email = $this->openid_connect->requestUserInfo("email");
+                    if($this->checkLocalUser()){
+                        $this->setAuthCookies();
+                        return true;
+                    }
                     return false;
                 }
-                $this->user_uuid = $this->openid_connect->requestUserInfo("sub");
-                $this->user_username = $this->openid_connect->requestUserInfo("preferred_username");
-                $this->user_email = $this->openid_connect->requestUserInfo("email");
+                $this->setAuthCookies(true);
+                return false;
             } catch (Jumbojett\OpenIDConnectClientException) {
+                $this->setAuthCookies(true);
                 return false;
             }
+            return false;
+        }
 
-            if($this->user_uuid == null){ return false; }
+        private function checkLocalUser(){
+            if($this->user_uuid === null || $this->user_username === null || $this->user_email === null){
+                return false;
+            }
 
             if($stmt = $this->conn->prepare("SELECT `users`.`id`, `users`.`username`, `users`.`email` FROM `users` WHERE `uuid` = ?")){
 				$stmt->bind_param("s", $this->user_uuid);
 				if(!$stmt->execute()){
+                    unset($stmt);
                     return false;
                 }
-				$stmt->bind_result($this->user_id, $username, $email);
+				$stmt->bind_result($user_id, $username, $email);
 				$stmt->fetch();
 				$stmt->close();
                 unset($stmt);
 
-				if($this->user_id == null){
-					if(!$this->createUser()){
-                        return false;
+				if($user_id === null){
+					if($stmt = $this->conn->prepare("INSERT INTO users (uuid, username, email) VALUES (?,?,?)")){
+                        $stmt->bind_param("sss", $this->user_uuid, $this->user_username, $this->user_email);
+                        if(!$stmt->execute()){
+                            unset($stmt);
+                            unset($user_id);
+                            unset($username);
+                            unset($email);
+                            return false;
+                        }
+                        $stmt->close();
+                        unset($stmt);
+                        unset($user_id);
+                        unset($username);
+                        unset($email);
+                        return true;
                     }
+                    unset($stmt);
+                    unset($user_id);
+                    unset($username);
+                    unset($email);
+                    return false;
 				}
                 
                 if($this->user_username != $username){
                     if($stmt = $this->conn->prepare("UPDATE users SET username = ? WHERE uuid = ?")){
                         $stmt->bind_param("ss", $this->user_username, $this->user_uuid);
-                        $stmt->execute();
+                        if(!$stmt->execute()){
+                            unset($stmt);
+                            unset($user_id);
+                            unset($username);
+                            unset($email);
+                            return false;
+                        }
                         $stmt->close();
                         unset($stmt);
+                        unset($user_id);
+                        unset($username);
+                        unset($email);
                     }
+                    unset($stmt);
+                    unset($user_id);
+                    unset($username);
+                    unset($email);
                 }
 
                 if($this->user_email != $email){
                     if($stmt = $this->conn->prepare("UPDATE users SET email = ? WHERE uuid = ?")){
                         $stmt->bind_param("ss", $this->user_email, $this->user_uuid);
-                        $stmt->execute();
+                        if(!$stmt->execute()){
+                            unset($stmt);
+                            unset($user_id);
+                            unset($username);
+                            unset($email);
+                            return false;
+                        }
                         $stmt->close();
                         unset($stmt);
-                    }
-                }
-
-                $uuid = null;
-                if($uuid_result = $this->conn->query("SELECT uuid()")){
-                    $uuid = $uuid_result->fetch_row()[0];
-			        $uuid_result->close();
-                    unset($uuid_result);
-                }
-
-                if($stmt = $this->conn->prepare("INSERT INTO `users_tokens` (`id`, `users_id`) VALUES (?,?)")){
-                    $stmt->bind_param("si", $uuid, $this->user_id);
-				    if(!$stmt->execute()){
-                        return false;
+                        unset($user_id);
+                        unset($username);
+                        unset($email);
                     }
                     unset($stmt);
-
-                    if($stmt = $this->conn->prepare("SELECT `token` FROM users_tokens WHERE `id` = ?")){
-                        $stmt->bind_param("s", $uuid);
-                        $stmt->execute();
-                        $stmt->bind_result($token);
-                        $stmt->fetch();
-                        $stmt->close();
-                        unset($stmt);
-
-                        setcookie("auth", $token, time() + 1800, "/", $this->cookiedomain, true, false);
-                        unset($uuid);
-                        unset($token);
-                        return true;
-                    }
+                    unset($user_id);
+                    unset($username);
+                    unset($email);
                 }
 
+                return true;
 			}
 
-            unset($uuid);
-            unset($token);
-            return false;
-        }
-
-        private function createUser(){
-            if($stmt = $this->conn->prepare("INSERT INTO users (uuid, username, email) VALUES (?,?,?)")){
-				$stmt->bind_param("sss", $this->user_uuid, $this->user_username, $this->user_email);
-                if(!$stmt->execute()){
-                    return false;
-                }
-                $this->user_id = $stmt->insert_id;
-				$stmt->close();
-                unset($stmt);
-                return true;
-            }
-            unset($stmt);
             return false;
         }
 
@@ -252,7 +264,7 @@
             return $this->user_uuid;
         }
 
-        /*
+        /**
          * Get the username of the user.
          * @return string|null
          */
@@ -260,7 +272,7 @@
             return $this->user_username;
         }
 
-        /*
+        /**
          * Get the email of the user.
          * @return string|null
          */
@@ -268,9 +280,13 @@
             return $this->user_email;
         }
 
+        /**
+         * Get the role of the user.
+         * @return string|null
+         */
         public function getRole(){
-            if($stmt = $this->conn->prepare("SELECT `user_role`.`name` FROM `users` LEFT JOIN `roles` `user_role` on `users`.`role` = `user_role`.`id` WHERE `users`.`id` = ?")){
-				$stmt->bind_param("i", $this->user_id);
+            if($stmt = $this->conn->prepare("SELECT `user_role`.`name` FROM `users` LEFT JOIN `roles` `user_role` on `users`.`role` = `user_role`.`id` WHERE `users`.`uuid` = ?")){
+				$stmt->bind_param("s", $this->user_uuid);
                 if(!$stmt->execute()){
                     return false;
                 }
@@ -282,6 +298,44 @@
             }
             unset($stmt);
             return null;
+        }
+
+        /**
+         * Set the refresh token for the auth request.
+         * @param string $token The refresh token.
+         * @return void
+         */
+        public function authenticateRefreshToken($refresh_token){
+            try {
+                if($this->openid_connect->introspectToken($refresh_token)->active){
+                    $this->openid_connect->addScope(array("openid"));
+                    $this->openid_connect->refreshToken($refresh_token);
+                    $this->user_uuid = $this->openid_connect->requestUserInfo("sub");
+                    $this->user_username = $this->openid_connect->requestUserInfo("preferred_username");
+                    $this->user_email = $this->openid_connect->requestUserInfo("email");
+                    $this->setAuthCookies();
+                    return true;
+                }
+            } catch (Jumbojett\OpenIDConnectClientException) {
+                $this->setAuthCookies(true);
+                return false;
+            }
+            
+            return false;
+        }
+
+        private function setAuthCookies($delete_cookies = false){
+            if($this->openid_connect->getAccessToken() !== null && !$delete_cookies){
+                setcookie("access_token", $this->openid_connect->getAccessToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getAccessToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+            } else {
+                setcookie("access_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+            }
+
+            if($this->openid_connect->getRefreshToken() !== null && !$delete_cookies){
+                setcookie("refresh_token", $this->openid_connect->getRefreshToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getRefreshToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+            } else {
+                setcookie("refresh_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+            }
         }
     }
 
