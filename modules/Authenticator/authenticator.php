@@ -91,10 +91,13 @@
          */
         public function login(){
             if($this->authenticateOpenID()){
-                header("Refresh: 0; url=" . $this->openid_connect->getRedirectURL());
                 return true;
             }
             return false;
+        }
+
+        public function getRedirectURL(){
+            return $this->openid_connect->getRedirectURL();
         }
 
         /*
