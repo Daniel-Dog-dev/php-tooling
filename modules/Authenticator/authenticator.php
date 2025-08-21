@@ -78,7 +78,7 @@
             }
 
             $this->openid_connect = new OpenIDConnectClient($openid_url, $openid_client, $openid_secret);
-            if($cookiedomain == "localhost"){
+            if($cookiedomain == "localhost" || str_ends_with($cookiedomain, ".local")){
                 $this->openid_connect->setHttpUpgradeInsecureRequests(false);
             }
             $this->conn = $conn;
