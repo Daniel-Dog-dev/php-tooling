@@ -78,7 +78,7 @@
             }
 
             $this->openid_connect = new OpenIDConnectClient($openid_url, $openid_client, $openid_secret);
-            if($cookiedomain == "localhost"){
+            if($cookiedomain == "localhost" || str_ends_with($cookiedomain, ".local")){
                 $this->openid_connect->setHttpUpgradeInsecureRequests(false);
             }
             $this->conn = $conn;
@@ -329,15 +329,15 @@
 
         private function setAuthCookies($delete_cookies = false){
             if($this->openid_connect->getAccessToken() !== null && !$delete_cookies){
-                setcookie("access_token", $this->openid_connect->getAccessToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getAccessToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                setcookie("access_token", $this->openid_connect->getAccessToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getAccessToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($this->cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
             } else {
-                setcookie("access_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                setcookie("access_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($this->cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
             }
 
             if($this->openid_connect->getRefreshToken() !== null && !$delete_cookies){
-                setcookie("refresh_token", $this->openid_connect->getRefreshToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getRefreshToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                setcookie("refresh_token", $this->openid_connect->getRefreshToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getRefreshToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($this->cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
             } else {
-                setcookie("refresh_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => true, 'httponly' => true, 'samesite' => 'Strict']);
+                setcookie("refresh_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($this->cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
             }
         }
     }
