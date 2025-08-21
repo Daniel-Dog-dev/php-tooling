@@ -337,7 +337,7 @@
             if($this->openid_connect->getRefreshToken() !== null && !$delete_cookies){
                 setcookie("refresh_token", $this->openid_connect->getRefreshToken(), ['expires' => $this->openid_connect->introspectToken($this->openid_connect->getRefreshToken())->exp, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($this->cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
             } else {
-                setcookie("refresh_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
+                setcookie("refresh_token", "", ['expires' => time() - 1800, 'path' => '/', 'domain' => $this->cookiedomain, 'secure' => ($this->cookiedomain == "localhost" || str_ends_with($this->cookiedomain, ".local") ? false : true), 'httponly' => true, 'samesite' => 'Strict']);
             }
         }
     }
