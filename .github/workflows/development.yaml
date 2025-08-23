@@ -62,5 +62,6 @@ jobs:
       - name: Version check
         run: |
             cp ./version.txt ${{ runner.temp }}/version.new.txt
+            git fetch
             git checkout master
             php ./.github/tests/appversion.php
