@@ -64,4 +64,5 @@ jobs:
             cp ./version.txt ${{ runner.temp }}/version.new.txt
             git fetch
             git checkout master
+            cp ${{ runner.temp }}/version.new.txt ./version.new.txt
             php ./.github/tests/appversion.php
