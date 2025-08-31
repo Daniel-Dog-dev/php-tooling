@@ -162,7 +162,8 @@
                 }
                 $this->setAuthCookies(true);
                 return false;
-            } catch (Jumbojett\OpenIDConnectClientException) {
+            } catch (Jumbojett\OpenIDConnectClientException $exception) {
+                error_log("Encountered error " . $exception->getCode() . " in " . $exception->getFile() . ", line " . $exception->getLine() . ": " . $exception->getMessage() . "\n");
                 $this->setAuthCookies(true);
                 return false;
             }
